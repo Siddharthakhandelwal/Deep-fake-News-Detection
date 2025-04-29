@@ -1,77 +1,53 @@
 document.addEventListener("DOMContentLoaded", function () {
   const analyzeBtn = document.getElementById("analyzeBtn");
+  const newsText = document.getElementById("newsText");
   const resultDiv = document.getElementById("result");
   const loadingDiv = document.getElementById("loading");
-  const resultTitle = document.getElementById("resultTitle");
-  const resultMessage = document.getElementById("resultMessage");
-  const confidenceLevel = document.getElementById("confidenceLevel");
+  const predictionSpan = document.getElementById("prediction");
+  const confidenceSpan = document.getElementById("confidence");
 
-  analyzeBtn.addEventListener("click", async () => {
+  // API URL - Update this with your Render URL after deployment
+  const API_URL = "https://deepfake-news-detector.onrender.com/analyze";
+
+  analyzeBtn.addEventListener("click", async function () {
+    const text = newsText.value.trim();
+    if (!text) {
+      alert("Please enter some text to analyze");
+      return;
+    }
+
+    // Show loading
+    loadingDiv.style.display = "block";
+    resultDiv.style.display = "none";
+
     try {
-      // Show loading state
-      analyzeBtn.disabled = true;
-      loadingDiv.classList.add("show");
-      resultDiv.classList.remove("show");
-
-      // Get the current active tab
-      const [tab] = await chrome.tabs.query({
-        active: true,
-        currentWindow: true,
-      });
-
-      // Execute content script to get page content
-      const results = await chrome.scripting.executeScript({
-        target: { tabId: tab.id },
-        function: getPageContent,
-      });
-
-      const pageContent = results[0].result;
-
-      // Send content to backend for analysis
-      const response = await fetch("http://localhost:5000/analyze", {
+      // Make API call to your backend
+      const response = await fetch(API_URL, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          url: tab.url,
-          content: pageContent,
-        }),
+        body: JSON.stringify({ text: text }),
       });
 
       const data = await response.json();
 
-      // Hide loading state
-      loadingDiv.classList.remove("show");
-      analyzeBtn.disabled = false;
+      if (data.status === "success") {
+        // Update UI with results
+        predictionSpan.textContent = data.prediction;
+        confidenceSpan.textContent = `${(data.confidence * 100).toFixed(2)}%`;
 
-      // Display results
-      resultDiv.classList.add("show");
-      if (data.is_deepfake) {
-        resultDiv.className = "result-container show danger";
-        resultTitle.textContent = "⚠️ Potential DeepFake Detected";
-        resultMessage.textContent = "This content might be manipulated";
-        confidenceLevel.style.width = `${data.confidence * 100}%`;
-        confidenceLevel.style.backgroundColor = "var(--danger-color)";
+        // Set result box class based on prediction
+        resultDiv.className = `result ${data.prediction.toLowerCase()}`;
+        resultDiv.style.display = "block";
       } else {
-        resultDiv.className = "result-container show safe";
-        resultTitle.textContent = "✅ Content Authentic";
-        resultMessage.textContent = "No signs of manipulation detected";
-        confidenceLevel.style.width = `${(1 - data.confidence) * 100}%`;
-        confidenceLevel.style.backgroundColor = "var(--safe-color)";
+        alert("Error: " + data.message);
       }
     } catch (error) {
-      // Hide loading state
-      loadingDiv.classList.remove("show");
-      analyzeBtn.disabled = false;
-
-      // Show error
-      resultDiv.className = "result-container show warning";
-      resultTitle.textContent = "❌ Error";
-      resultMessage.textContent =
-        "Failed to analyze content. Please try again.";
-      confidenceLevel.style.width = "0%";
       console.error("Error:", error);
+      alert("Error analyzing the text. Please try again.");
+    } finally {
+      loadingDiv.style.display = "none";
     }
   });
 });

@@ -2,10 +2,16 @@ services:
   - type: web
     name: deepfake-news-detector
     env: python
-    buildCommand: pip install -r requirements.txt
+    buildCommand: |
+      pip install -r requirements.txt
+      python -c "import nltk; nltk.download('punkt')"
     startCommand: gunicorn app:app -c gunicorn_config.py
     envVars:
       - key: PYTHON_VERSION
         value: 3.9.9
       - key: PORT
         value: 10000
+      - key: PYTHONUNBUFFERED
+        value: 1
+    plan: free
+    healthCheckPath: /health

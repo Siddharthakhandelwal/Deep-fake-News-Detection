@@ -96,8 +96,8 @@ def predict_news(text):
         prediction = model.predict([tokens['input_ids'], tokens['attention_mask']], verbose=0)
         
         # Convert prediction to label
-        label = 'Fake' if prediction[0][0] > 0.5 else 'Real'
-        confidence = float(prediction[0][0] if label == 'Fake' else 1 - prediction[0][0])
+        label = 'Fake' if prediction[0][0] > 0.5 else 'fake'
+        confidence = float(prediction[0][0] if label == 'Real' else 1 - prediction[0][0])
         
         return {
             'text': text,
