@@ -4,11 +4,19 @@ from flask_cors import CORS
 app = Flask(__name__)
 CORS(app)
 
+@app.route('/')
+def home():
+    return jsonify({
+        'status': 'success',
+        'message': 'DeepFake News Detector API is running',
+        'endpoints': {
+            '/analyze': 'POST - Analyze content for deepfake detection'
+        }
+    })
+
 @app.route('/analyze', methods=['POST'])
 def analyze_content():
     data = request.json
-    # This is where you'll integrate your deepfake detection model later
-    # For now, we'll return a mock response
     return jsonify({
         'status': 'success',
         'is_deepfake': False,

@@ -1,9 +1,18 @@
 document.addEventListener("DOMContentLoaded", function () {
   const analyzeBtn = document.getElementById("analyzeBtn");
   const resultDiv = document.getElementById("result");
+  const loadingDiv = document.getElementById("loading");
+  const resultTitle = document.getElementById("resultTitle");
+  const resultMessage = document.getElementById("resultMessage");
+  const confidenceLevel = document.getElementById("confidenceLevel");
 
   analyzeBtn.addEventListener("click", async () => {
     try {
+      // Show loading state
+      analyzeBtn.disabled = true;
+      loadingDiv.classList.add("show");
+      resultDiv.classList.remove("show");
+
       // Get the current active tab
       const [tab] = await chrome.tabs.query({
         active: true,
@@ -32,17 +41,36 @@ document.addEventListener("DOMContentLoaded", function () {
 
       const data = await response.json();
 
+      // Hide loading state
+      loadingDiv.classList.remove("show");
+      analyzeBtn.disabled = false;
+
       // Display results
+      resultDiv.classList.add("show");
       if (data.is_deepfake) {
-        resultDiv.className = "danger";
-        resultDiv.textContent = "⚠️ Warning: This content might be manipulated";
+        resultDiv.className = "result-container show danger";
+        resultTitle.textContent = "⚠️ Potential DeepFake Detected";
+        resultMessage.textContent = "This content might be manipulated";
+        confidenceLevel.style.width = `${data.confidence * 100}%`;
+        confidenceLevel.style.backgroundColor = "var(--danger-color)";
       } else {
-        resultDiv.className = "safe";
-        resultDiv.textContent = "✅ Content appears to be authentic";
+        resultDiv.className = "result-container show safe";
+        resultTitle.textContent = "✅ Content Authentic";
+        resultMessage.textContent = "No signs of manipulation detected";
+        confidenceLevel.style.width = `${(1 - data.confidence) * 100}%`;
+        confidenceLevel.style.backgroundColor = "var(--safe-color)";
       }
     } catch (error) {
-      resultDiv.className = "warning";
-      resultDiv.textContent = "❌ Error analyzing content. Please try again.";
+      // Hide loading state
+      loadingDiv.classList.remove("show");
+      analyzeBtn.disabled = false;
+
+      // Show error
+      resultDiv.className = "result-container show warning";
+      resultTitle.textContent = "❌ Error";
+      resultMessage.textContent =
+        "Failed to analyze content. Please try again.";
+      confidenceLevel.style.width = "0%";
       console.error("Error:", error);
     }
   });
