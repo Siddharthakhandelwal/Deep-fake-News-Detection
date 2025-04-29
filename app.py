@@ -2,6 +2,11 @@ from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
 from predict import predict_news
 import os
+import logging
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 CORS(app)
@@ -34,10 +39,19 @@ def analyze_content():
         })
 
     except Exception as e:
+        logger.error(f"Error in analysis: {str(e)}")
         return jsonify({
             'status': 'error',
             'message': str(e)
         }), 500
 
+@app.route('/health')
+def health_check():
+    return jsonify({
+        'status': 'healthy',
+        'message': 'Service is running'
+    })
+
 if __name__ == '__main__':
-    app.run(debug=True, port=5000) 
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port, debug=False) 

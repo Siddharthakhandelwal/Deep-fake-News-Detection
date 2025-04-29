@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: deepfake-news-detector
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app -c gunicorn_config.py
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.9.9
+      - key: PORT
+        value: 10000
