@@ -4,12 +4,12 @@ import pandas as pd
 import numpy as np
 
 # Load the trained model
-model = tf.keras.models.load_model('bert_fake_news_model')
+model = tf.keras.models.load_model('Deepfake.h5')
 
 # Load the BERT tokenizer
 tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
 
-def preprocess_text(text, max_length=512):
+def preprocess_text(text, max_length=100):
     """Preprocess text for BERT model"""
     # Tokenize text
     tokens = tokenizer.encode_plus(
@@ -41,7 +41,7 @@ def predict_news(text):
 
 if __name__ == '__main__':
     # Example usage
-    test_text = "Scientists have discovered a new species of dinosaur that can talk and has developed advanced technology."
+    test_text = "India prime minister Narendra modi died on 2nd jan"
     result = predict_news(test_text)
     print(f"Text: {result['text']}")
     print(f"Prediction: {result['prediction']}")
