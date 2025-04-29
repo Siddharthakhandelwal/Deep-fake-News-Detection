@@ -4,7 +4,7 @@ import pandas as pd
 import numpy as np
 import logging
 import os
-from tensorflow.keras.layers import Input, Dense, Dropout, LayerNormalization
+from tensorflow.keras.layers import Input, Dense, Dropout, LayerNormalization, Lambda
 from tensorflow.keras.models import Model
 
 # Set up logging
@@ -21,7 +21,8 @@ def create_model():
     bert_model = TFBertModel.from_pretrained('bert-base-uncased')
     
     # Get BERT outputs
-    sequence_output, pooled_output = bert_model([input_ids, attention_mask])
+    bert_outputs = bert_model([input_ids, attention_mask])
+    pooled_output = bert_outputs[1]  # Get the pooled output
     
     # Add classification layers
     x = Dense(768, activation='relu')(pooled_output)
