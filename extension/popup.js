@@ -5,23 +5,75 @@ document.addEventListener("DOMContentLoaded", function () {
   const loadingDiv = document.getElementById("loading");
   const predictionSpan = document.getElementById("prediction");
   const confidenceSpan = document.getElementById("confidence");
+  const errorDiv = document.getElementById("error");
+  const errorMessage = document.getElementById("errorMessage");
 
   // API URL - Update this with your Render URL after deployment
-  const API_URL = "https://deepfake-news-detector.onrender.com/analyze";
+  const API_URL = "http://localhost:5000/analyze"; // Change this to your Render URL after deployment
+
+  // Add loading spinner style
+  const style = document.createElement("style");
+  style.textContent = `
+      .spinner {
+          border: 4px solid rgba(0, 0, 0, 0.1);
+          border-radius: 50%;
+          border-top: 4px solid #4CAF50;
+          width: 30px;
+          height: 30px;
+          animation: spin 1s linear infinite;
+          margin: 0 auto;
+      }
+      @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+      }
+  `;
+  document.head.appendChild(style);
+
+  function showError(message) {
+    errorMessage.textContent = message;
+    errorDiv.style.display = "block";
+    resultDiv.style.display = "none";
+    loadingDiv.style.display = "none";
+  }
+
+  function hideError() {
+    errorDiv.style.display = "none";
+  }
+
+  function showLoading() {
+    loadingDiv.style.display = "block";
+    resultDiv.style.display = "none";
+    hideError();
+  }
+
+  function showResult(prediction, confidence) {
+    loadingDiv.style.display = "none";
+    resultDiv.style.display = "block";
+    hideError();
+
+    predictionSpan.textContent = prediction;
+    confidenceSpan.textContent = `${(confidence * 100).toFixed(2)}%`;
+
+    if (prediction === "Fake") {
+      resultDiv.className = "result fake";
+    } else {
+      resultDiv.className = "result real";
+    }
+  }
 
   analyzeBtn.addEventListener("click", async function () {
     const text = newsText.value.trim();
+
     if (!text) {
-      alert("Please enter some text to analyze");
+      showError("Please enter some text to analyze");
       return;
     }
 
-    // Show loading
-    loadingDiv.style.display = "block";
-    resultDiv.style.display = "none";
-
     try {
-      // Make API call to your backend
+      showLoading();
+      analyzeBtn.disabled = true;
+
       const response = await fetch(API_URL, {
         method: "POST",
         headers: {
@@ -30,24 +82,17 @@ document.addEventListener("DOMContentLoaded", function () {
         body: JSON.stringify({ text: text }),
       });
 
-      const data = await response.json();
-
-      if (data.status === "success") {
-        // Update UI with results
-        predictionSpan.textContent = data.prediction;
-        confidenceSpan.textContent = `${(data.confidence * 100).toFixed(2)}%`;
-
-        // Set result box class based on prediction
-        resultDiv.className = `result ${data.prediction.toLowerCase()}`;
-        resultDiv.style.display = "block";
-      } else {
-        alert("Error: " + data.message);
+      if (!response.ok) {
+        throw new Error(`Server returned ${response.status}`);
       }
+
+      const data = await response.json();
+      showResult(data.prediction, data.confidence);
     } catch (error) {
+      showError(`Error analyzing text: ${error.message}`);
       console.error("Error:", error);
-      alert("Error analyzing the text. Please try again.");
     } finally {
-      loadingDiv.style.display = "none";
+      analyzeBtn.disabled = false;
     }
   });
 });
